@@ -1,6 +1,6 @@
 "use client";
 
-import { Fingerprint, Plus, Trash2 } from "lucide-react";
+import { Fingerprint, PencilLine, Plus, Trash2 } from "lucide-react";
 import { PasskeyButton } from "@/components/passkey-button";
 import { Button } from "@/components/ui/button";
 
@@ -8,12 +8,14 @@ type Authenticator = {
   credentialID: string;
   credentialDeviceType: string;
   credentialBackedUp: boolean;
+  name: string | null;
   createdAt: Date;
 };
 
 type PasskeyManagementProps = {
   authenticators: Authenticator[];
   removePasskey: (formData: FormData) => void | Promise<void>;
+  updatePasskeyName: (formData: FormData) => void | Promise<void>;
 };
 
 function deviceLabel(authenticator: Authenticator) {
@@ -27,6 +29,7 @@ function deviceLabel(authenticator: Authenticator) {
 export function PasskeyManagement({
   authenticators,
   removePasskey,
+  updatePasskeyName,
 }: PasskeyManagementProps) {
   if (authenticators.length === 0) {
     return (
@@ -48,20 +51,42 @@ export function PasskeyManagement({
         {authenticators.map((authenticator, index) => (
           <li
             key={authenticator.credentialID}
-            className="flex items-center justify-between gap-4 px-4 py-3"
+            className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
           >
-            <div className="flex min-w-0 items-center gap-3">
+            <form
+              action={updatePasskeyName}
+              className="flex min-w-0 flex-1 items-center gap-3"
+            >
               <Fingerprint className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Passkey {index + 1}</p>
-                <p className="text-xs text-muted-foreground">
+              <input
+                type="hidden"
+                name="credentialID"
+                value={authenticator.credentialID}
+              />
+              <div className="min-w-0 flex-1">
+                <label className="sr-only" htmlFor={`passkey-name-${index}`}>
+                  Passkey 备注
+                </label>
+                <input
+                  id={`passkey-name-${index}`}
+                  name="name"
+                  maxLength={40}
+                  defaultValue={authenticator.name ?? ""}
+                  placeholder={`Passkey ${index + 1}`}
+                  className="h-8 w-full rounded border bg-background px-2 text-sm font-medium outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-400/20"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
                   {deviceLabel(authenticator)} · 绑定于{" "}
                   {new Intl.DateTimeFormat("zh-CN", {
                     dateStyle: "medium",
                   }).format(authenticator.createdAt)}
                 </p>
               </div>
-            </div>
+              <Button type="submit" variant="ghost" className="shrink-0 gap-2">
+                <PencilLine className="h-4 w-4" />
+                <span className="hidden md:inline">保存</span>
+              </Button>
+            </form>
             <form
               action={removePasskey}
               onSubmit={(event) => {

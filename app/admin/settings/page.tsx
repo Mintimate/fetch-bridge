@@ -2,7 +2,7 @@ import { KeyRound } from "lucide-react";
 import { auth } from "@/auth";
 import { PasskeyManagement } from "@/components/passkey-management";
 import { prisma } from "@/lib/db";
-import { removePasskey } from "./actions";
+import { removePasskey, updatePasskeyName } from "./actions";
 
 export default async function SettingsPage() {
   const email = (await auth())?.user?.email;
@@ -13,6 +13,7 @@ export default async function SettingsPage() {
           credentialID: true,
           credentialDeviceType: true,
           credentialBackedUp: true,
+          name: true,
           createdAt: true,
         },
         orderBy: { createdAt: "desc" },
@@ -40,6 +41,7 @@ export default async function SettingsPage() {
           <PasskeyManagement
             authenticators={authenticators}
             removePasskey={removePasskey}
+            updatePasskeyName={updatePasskeyName}
           />
         </section>
         <section className="rounded-lg border p-5">

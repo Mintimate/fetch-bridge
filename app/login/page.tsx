@@ -37,7 +37,7 @@ export default function LoginPage() {
     <main className="relative grid min-h-screen overflow-hidden px-5 py-8 md:grid-cols-[1.1fr_0.9fr] md:p-10">
       <div className="login-orb login-orb-one" />
       <div className="login-orb login-orb-two" />
-      <section className="relative z-10 hidden flex-col justify-between rounded-2xl border border-white/10 bg-slate-950 p-10 text-slate-100 shadow-2xl md:flex">
+      <section className="relative z-10 hidden flex-col justify-between rounded-2xl border border-border bg-gradient-to-br from-orange-50 via-background to-sky-50 p-10 text-slate-950 shadow-2xl shadow-slate-950/10 md:flex dark:border-white/10 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 dark:text-slate-100">
         <div>
           <Link
             href="/"
@@ -49,8 +49,8 @@ export default function LoginPage() {
             FETCH BRIDGE
           </Link>
           <div className="mt-28 max-w-md">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-slate-300">
-              <Sparkles className="h-3.5 w-3.5 text-orange-300" />
+            <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-3 py-1 text-xs text-slate-600 dark:border-white/15 dark:bg-white/5 dark:text-slate-300">
+              <Sparkles className="h-3.5 w-3.5 text-orange-500 dark:text-orange-300" />
               私有下载中继
             </span>
             <h1 className="mt-5 text-4xl font-semibold tracking-tight">
@@ -58,12 +58,12 @@ export default function LoginPage() {
               <br />
               只为你而设。
             </h1>
-            <p className="mt-5 max-w-sm text-sm leading-6 text-slate-400">
+            <p className="mt-5 max-w-sm text-sm leading-6 text-slate-600 dark:text-slate-400">
               所有下载仅来自已审核的映射路由。管理员认证后，才可管理源站、规则和下载记录。
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3 text-xs text-slate-500">
+        <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-500">
           <ShieldCheck className="h-4 w-4 text-emerald-400" />
           HTTPS 传输 · 受控路由 · 流式中继
         </div>
