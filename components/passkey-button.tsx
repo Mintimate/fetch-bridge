@@ -9,12 +9,14 @@ type PasskeyButtonProps = {
   mode: "authenticate" | "register";
   callbackUrl: string;
   className?: string;
+  label?: string;
 };
 
 export function PasskeyButton({
   mode,
   callbackUrl,
   className,
+  label,
 }: PasskeyButtonProps) {
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const isRegistration = mode === "register";
@@ -51,9 +53,8 @@ export function PasskeyButton({
         )}
         {status === "loading"
           ? "正在验证…"
-          : isRegistration
-            ? "绑定此设备的 Passkey"
-            : "使用 Passkey 登录"}
+          : (label ??
+            (isRegistration ? "绑定此设备的 Passkey" : "使用 Passkey 登录"))}
       </Button>
       {status === "error" && (
         <p className="mt-2 text-center text-xs text-red-600 dark:text-red-400">

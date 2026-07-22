@@ -1,7 +1,23 @@
 import { KeyRound } from "lucide-react";
-import { PasskeyButton } from "@/components/passkey-button";
+import { auth } from "@/auth";
+import { PasskeyManagement } from "@/components/passkey-management";
+import { prisma } from "@/lib/db";
+import { removePasskey } from "./actions";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const email = (await auth())?.user?.email;
+  const authenticators = email
+    ? await prisma.authenticator.findMany({
+        where: { user: { email } },
+        select: {
+          credentialID: true,
+          credentialDeviceType: true,
+          credentialBackedUp: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      })
+    : [];
   return (
     <>
       <header className="mb-8">
@@ -21,10 +37,9 @@ export default function SettingsPage() {
               </p>
             </div>
           </div>
-          <PasskeyButton
-            mode="register"
-            callbackUrl="/console/settings"
-            className="mt-5 max-w-xs"
+          <PasskeyManagement
+            authenticators={authenticators}
+            removePasskey={removePasskey}
           />
         </section>
         <section className="rounded-lg border p-5">
