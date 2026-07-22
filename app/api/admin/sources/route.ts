@@ -1,0 +1,16 @@
+import { auth } from "@/auth";
+import { prisma } from "@/lib/db";
+import { sourceSchema } from "@/lib/schemas";
+import { assertPublicDns, assertSafeSourceUrl } from "@/lib/source-security";
+import { databaseErrorResponse } from "@/lib/api-errors";
+
+export async function POST(request: Request) {
+  if (!(await auth())) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const parsed = sourceSchema.safeParse(await request.json());
+  if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+  try { await assertPublicDns(assertSafeSourceUrl(parsed.data.baseUrl)); } catch (error) { return Response.json({ error: error instanceof Error ? error.message : "Invalid source" }, { status: 400 }); }
+  try {
+    const source = await prisma.source.create({ data: { ...parsed.data, userAgent: parsed.data.userAgent || null, headersJson: JSON.stringify(parsed.data.headers) } });
+    return Response.json(source, { status: 201 });
+  } catch (error) { return databaseErrorResponse(error); }
+}
