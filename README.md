@@ -24,4 +24,6 @@ npm run dev
 
 访问 `/` 浏览公开下载，访问 `/console` 登录管理控制台。登录凭据由 `ADMIN_EMAIL` 和 `ADMIN_PASSWORD` 配置；生产环境请在 Vercel 将密码设为 Sensitive 环境变量。
 
+首次使用密码登录后，可在 `/console/settings` 为当前设备绑定 Passkey。后续可通过系统生物识别或设备解锁直接登录；Passkey 仅绑定到这个已验证的管理员账号，站点不提供公开注册。
+
 本地开发使用 SQLite；Vercel 生产环境使用 PostgreSQL。详细部署说明见 [docs/README.md](docs/README.md)，数据模型见 [prisma/README.md](prisma/README.md)。

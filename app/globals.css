@@ -3,8 +3,57 @@
 @tailwind utilities;
 
 @layer base {
-  :root { --background: 0 0% 100%; --foreground: 222.2 47.4% 11.2%; --muted: 210 40% 96.1%; --muted-foreground: 215.4 16.3% 46.9%; --border: 214.3 31.8% 91.4%; --primary: 222.2 47.4% 11.2%; }
-  .dark { --background: 222.2 47.4% 11.2%; --foreground: 210 40% 98%; --muted: 217.2 32.6% 17.5%; --muted-foreground: 215 20.2% 65.1%; --border: 217.2 32.6% 17.5%; --primary: 210 40% 98%; }
-  * { @apply border-border; }
-  body { @apply bg-[hsl(var(--background))] text-[hsl(var(--foreground))] antialiased; }
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --border: 214.3 31.8% 91.4%;
+    --primary: 222.2 47.4% 11.2%;
+  }
+  .dark {
+    --background: 222.2 47.4% 11.2%;
+    --foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --border: 217.2 32.6% 17.5%;
+    --primary: 210 40% 98%;
+  }
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-[hsl(var(--background))] text-[hsl(var(--foreground))] antialiased;
+    background-image:
+      linear-gradient(hsl(var(--foreground) / 0.035) 1px, transparent 1px),
+      linear-gradient(
+        90deg,
+        hsl(var(--foreground) / 0.035) 1px,
+        transparent 1px
+      );
+    background-size: 32px 32px;
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(3rem, -2rem, 0) scale(1.08);
+  }
+}
+
+.login-orb {
+  @apply pointer-events-none absolute rounded-full blur-3xl;
+  animation: drift 12s ease-in-out infinite;
+}
+
+.login-orb-one {
+  @apply -left-24 -top-24 h-80 w-80 bg-orange-400/20 dark:bg-orange-500/10;
+}
+.login-orb-two {
+  @apply -bottom-32 right-0 h-96 w-96 bg-sky-400/15 dark:bg-sky-500/10;
+  animation-delay: -6s;
 }

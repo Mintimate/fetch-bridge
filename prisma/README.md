@@ -2,6 +2,8 @@
 
 `Source` 代表已审核的 HTTPS 源站；`Route` 将公开路径前缀映射到某个 Source 下的固定目标路径；`DownloadLog` 记录中继结果。
 
+认证数据模型 `User`、`Account`、`Session`、`VerificationToken` 与 `Authenticator` 由 Auth.js 使用。其中 `Authenticator` 保存管理员已绑定的 Passkey；管理员账号只会在密码验证成功后创建。
+
 ## 双环境目录
 
 - `sqlite/`：本地开发专用，SQLite schema 与迁移。`.env` 中的 `file:../dev.db` 指向 `prisma/dev.db`。
