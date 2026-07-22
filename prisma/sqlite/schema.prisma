@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Source {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  baseUrl     String
+  enabled     Boolean  @default(true)
+  timeoutMs   Int      @default(30000)
+  userAgent   String?
+  headersJson String   @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  routes      Route[]
+}
+
+model Route {
+  id          String   @id @default(cuid())
+  pathPrefix  String   @unique
+  targetPath  String
+  enabled     Boolean  @default(true)
+  isPublic    Boolean  @default(true)
+  name        String
+  description String?
+  sourceId    String
+  source      Source   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  logs        DownloadLog[]
+
+  @@index([enabled, isPublic])
+}
+
+model DownloadLog {
+  id         String   @id @default(cuid())
+  routeId    String?
+  route      Route?   @relation(fields: [routeId], references: [id], onDelete: SetNull)
+  sourceName String
+  path       String
+  status     Int
+  durationMs Int
+  bytes      BigInt   @default(0)
+  clientIp   String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([routeId, createdAt])
+}
