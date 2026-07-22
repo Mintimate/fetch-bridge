@@ -1,0 +1,19 @@
+# Dependencies and build output
+node_modules/
+.next/
+coverage/
+*.tsbuildinfo
+
+# Local credentials and CLI state
+.env*
+.vercel/
+
+# Local SQLite databases
+*.db
+*.db-journal
+
+# Logs and operating-system files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
