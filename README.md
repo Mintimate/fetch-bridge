@@ -22,6 +22,6 @@ npm run dev
 
 脚本会在首次运行时复制 `.env.example`、安装依赖、应用迁移并写入示例 Route。请在 `.env` 中填写 `AUTH_SECRET`、`ADMIN_EMAIL` 与 `ADMIN_PASSWORD` 后再登录后台。
 
-访问 `/` 浏览公开下载，访问 `/admin` 登录管理后台。登录凭据由 `ADMIN_EMAIL` 和 `ADMIN_PASSWORD` 配置；生产环境请在 Vercel 将密码设为 Sensitive 环境变量。
+访问 `/` 浏览公开下载，访问 `/console` 登录管理控制台。登录凭据由 `ADMIN_EMAIL` 和 `ADMIN_PASSWORD` 配置；生产环境请在 Vercel 将密码设为 Sensitive 环境变量。
 
 本地开发使用 SQLite；Vercel 生产环境使用 PostgreSQL。详细部署说明见 [docs/README.md](docs/README.md)，数据模型见 [prisma/README.md](prisma/README.md)。

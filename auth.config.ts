@@ -5,7 +5,7 @@ const authConfig = {
   providers: [],
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
-      if (nextUrl.pathname === "/login" || nextUrl.pathname.startsWith("/download/") || nextUrl.pathname.startsWith("/api/auth")) return true;
+      if (nextUrl.pathname === "/login" || nextUrl.pathname.startsWith("/download/") || nextUrl.pathname.startsWith("/api/auth") || nextUrl.pathname === "/admin" || nextUrl.pathname.startsWith("/admin/")) return true;
       return Boolean(auth);
     },
   },
