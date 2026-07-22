@@ -1,4 +1,30 @@
 import { prisma } from "@/lib/db";
 import { SourceForm } from "@/components/admin/forms";
+import { SourceManagement } from "@/components/admin/source-management";
 export const dynamic = "force-dynamic";
-export default async function SourcesPage() { const sources = await prisma.source.findMany({ include: { _count: { select: { routes: true } } }, orderBy: { updatedAt: "desc" } }); return <><header className="mb-8"><p className="text-sm text-muted-foreground">Sources</p><h1 className="mt-1 text-2xl font-semibold">源站</h1><p className="mt-2 text-sm text-muted-foreground">仅接受 HTTPS 公网源站；凭据、Cookie 与转发链 Header 已禁止。</p></header><div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]"><section className="overflow-hidden rounded-lg border"><div className="grid grid-cols-[1fr_auto] gap-4 border-b px-5 py-3 text-xs text-muted-foreground"><span>源站</span><span>路由 / 状态</span></div>{sources.map((source) => <div key={source.id} className="grid grid-cols-[1fr_auto] gap-4 border-b px-5 py-4 last:border-0"><div><p className="font-medium">{source.name}</p><p className="mt-1 break-all text-sm text-muted-foreground">{source.baseUrl}</p></div><div className="text-right text-sm"><p>{source._count.routes} routes</p><p className={source.enabled ? "mt-1 text-emerald-600" : "mt-1 text-muted-foreground"}>{source.enabled ? "Enabled" : "Disabled"}</p></div></div>)}{!sources.length && <p className="p-6 text-sm text-muted-foreground">还没有源站。</p>}</section><SourceForm /></div></>; }
+export default async function SourcesPage() {
+  const records = await prisma.source.findMany({
+    include: { _count: { select: { routes: true } } },
+    orderBy: { updatedAt: "desc" },
+  });
+  const sources = records.map(({ _count, ...source }) => ({
+    ...source,
+    routeCount: _count.routes,
+  }));
+
+  return (
+    <>
+      <header className="mb-8">
+        <p className="text-sm text-muted-foreground">Sources</p>
+        <h1 className="mt-1 text-2xl font-semibold">源站</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          仅接受 HTTPS 公网源站；凭据、Cookie 与转发链 Header 已禁止。
+        </p>
+      </header>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <SourceManagement sources={sources} />
+        <SourceForm />
+      </div>
+    </>
+  );
+}
