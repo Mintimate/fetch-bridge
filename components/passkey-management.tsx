@@ -3,6 +3,7 @@
 import { Fingerprint, PencilLine, Plus, Trash2 } from "lucide-react";
 import { PasskeyButton } from "@/components/passkey-button";
 import { Button } from "@/components/ui/button";
+import { formatShanghaiDate } from "@/lib/utils";
 
 type Authenticator = {
   credentialID: string;
@@ -77,9 +78,7 @@ export function PasskeyManagement({
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
                   {deviceLabel(authenticator)} · 绑定于{" "}
-                  {new Intl.DateTimeFormat("zh-CN", {
-                    dateStyle: "medium",
-                  }).format(authenticator.createdAt)}
+                  {formatShanghaiDate(authenticator.createdAt)}
                 </p>
               </div>
               <Button type="submit" variant="ghost" className="shrink-0 gap-2">

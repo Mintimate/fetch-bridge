@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, Download, LogOut } from "lucide-react";
 import { signOut } from "@/auth";
 import { prisma } from "@/lib/db";
+import { formatShanghaiDate } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BridgeUrlForm } from "@/components/bridge-url-form";
 
@@ -73,7 +74,7 @@ export default async function HomePage() {
                       `${route.source.name} · ${route.pathPrefix}`}
                   </p>
                   <p className="mt-3 text-xs text-muted-foreground">
-                    更新于 {route.updatedAt.toLocaleDateString("zh-CN")}
+                    更新于 {formatShanghaiDate(route.updatedAt)}
                   </p>
                 </div>
                 <a
