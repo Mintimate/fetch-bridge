@@ -29,9 +29,9 @@ export default async function HomePage() {
           <Link
             href="/console"
             prefetch={false}
-            className="text-sm text-muted-foreground hover:text-foreground"
+            className="inline-flex h-9 items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
           >
-            控制台 <ArrowUpRight className="inline h-4 w-4" />
+            控制台 <ArrowUpRight className="h-4 w-4" />
           </Link>
           <form
             action={async () => {
@@ -39,7 +39,7 @@ export default async function HomePage() {
               await signOut({ redirectTo: "/login" });
             }}
           >
-            <button className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <button className="inline-flex h-9 items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
               <LogOut className="h-4 w-4" />
               退出
             </button>
