@@ -1,5 +1,5 @@
 import { getDb } from "@/lib/db";
-import { assertSafeSourceUrl } from "@/lib/source-security";
+import { assertSafeSourceUrl } from "@/lib/relay-core";
 import { auth } from "@/auth";
 
 function routeTargetPath(targetPath: string, pathname: string) {

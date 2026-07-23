@@ -12,7 +12,7 @@ import {
   resolveUpstreamUrl,
   responseContentLength,
   sourceTimeout,
-} from "@/lib/source-security";
+} from "@/lib/relay-core";
 
 type ResolvedRoute = Awaited<ReturnType<typeof resolveRoute>>;
 

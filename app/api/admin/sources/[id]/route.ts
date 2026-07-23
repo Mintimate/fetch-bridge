@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { databaseErrorResponse } from "@/lib/api-errors";
 import { getDb } from "@/lib/db";
 import { sourceSchema } from "@/lib/schemas";
-import { assertPublicDns, assertSafeSourceUrl } from "@/lib/source-security";
+import { assertPublicDns, assertSafeSourceUrl } from "@/lib/relay-core";
 
 type RouteContext = { params: Promise<{ id: string }> };
 

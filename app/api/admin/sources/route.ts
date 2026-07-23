@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { getDb } from "@/lib/db";
 import { sourceSchema } from "@/lib/schemas";
-import { assertPublicDns, assertSafeSourceUrl } from "@/lib/source-security";
+import { assertPublicDns, assertSafeSourceUrl } from "@/lib/relay-core";
 import { databaseErrorResponse } from "@/lib/api-errors";
 
 export async function POST(request: Request) {
