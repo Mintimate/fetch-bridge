@@ -1,4 +1,5 @@
 import { getDb } from "@/lib/db";
+import { RouteResolutionFlow } from "@/components/route-resolution-flow";
 import { SourcesAndRoutes } from "@/components/sources-and-routes";
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,7 @@ export default async function SourcesPage() {
         </p>
       </header>
       <SourcesAndRoutes sources={sources} routes={routes} />
+      <RouteResolutionFlow />
     </>
   );
 }
