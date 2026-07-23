@@ -1,10 +1,13 @@
 import { KeyRound } from "lucide-react";
 import { auth } from "@/auth";
 import { PasskeyManagement } from "@/components/passkey-management";
-import { prisma } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { removePasskey, updatePasskeyName } from "./actions";
 
+export const dynamic = "force-dynamic";
+
 export default async function SettingsPage() {
+  const prisma = getDb();
   const email = (await auth())?.user?.email;
   const authenticators = email
     ? await prisma.authenticator.findMany({

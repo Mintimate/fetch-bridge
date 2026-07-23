@@ -3,9 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/db";
+import { getDb } from "@/lib/db";
 
 export async function removePasskey(formData: FormData) {
+  const prisma = getDb();
   const credentialID = formData.get("credentialID");
   if (typeof credentialID !== "string" || !credentialID) return;
 
@@ -27,6 +28,7 @@ export async function removePasskey(formData: FormData) {
 }
 
 export async function updatePasskeyName(formData: FormData) {
+  const prisma = getDb();
   const parsed = z
     .object({
       credentialID: z.string().min(1),

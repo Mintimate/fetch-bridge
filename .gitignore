@@ -1,6 +1,8 @@
 # Dependencies and build output
 node_modules/
 .next/
+.open-next/
+.wrangler/
 coverage/
 *.tsbuildinfo
 
@@ -10,7 +12,11 @@ coverage/
 .env.development.local
 .env.test.local
 .env.production.local
-.vercel/
+.dev.vars
+
+# Environment-specific Cloudflare resources and routes
+wrangler.jsonc
+wrangler.download.jsonc
 
 # Local SQLite databases
 *.db

@@ -1,8 +1,9 @@
-import { prisma } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { SourceForm } from "@/components/admin/forms";
 import { SourceManagement } from "@/components/admin/source-management";
 export const dynamic = "force-dynamic";
 export default async function SourcesPage() {
+  const prisma = getDb();
   const records = await prisma.source.findMany({
     include: { _count: { select: { routes: true } } },
     orderBy: { updatedAt: "desc" },

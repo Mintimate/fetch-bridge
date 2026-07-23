@@ -1,10 +1,11 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { sourceSchema } from "@/lib/schemas";
 import { assertPublicDns, assertSafeSourceUrl } from "@/lib/source-security";
 import { databaseErrorResponse } from "@/lib/api-errors";
 
 export async function POST(request: Request) {
+  const prisma = getDb();
   if (!(await auth()))
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   const parsed = sourceSchema.safeParse(await request.json());

@@ -37,7 +37,7 @@ export default function LoginPage() {
     <main className="relative grid min-h-screen overflow-hidden px-5 py-8 md:grid-cols-[1.1fr_0.9fr] md:p-10">
       <div className="login-orb login-orb-one" />
       <div className="login-orb login-orb-two" />
-      <section className="relative z-10 hidden flex-col justify-between rounded-2xl border border-border bg-gradient-to-br from-orange-50 via-background to-sky-50 p-10 text-slate-950 shadow-2xl shadow-slate-950/10 md:flex dark:border-white/10 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 dark:text-slate-100">
+      <section className="relative z-10 hidden flex-col justify-between rounded-2xl border border-border bg-gradient-to-br from-orange-50 via-background to-sky-50 p-10 text-slate-950 shadow-2xl shadow-slate-950/10 dark:border-white/10 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 dark:text-slate-100 md:flex">
         <div>
           <Link
             href="/"

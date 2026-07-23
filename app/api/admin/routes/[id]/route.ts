@@ -1,11 +1,12 @@
 import { auth } from "@/auth";
 import { databaseErrorResponse } from "@/lib/api-errors";
-import { prisma } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { routeSchema } from "@/lib/schemas";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, { params }: RouteContext) {
+  const prisma = getDb();
   if (!(await auth()))
     return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -38,6 +39,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 }
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
+  const prisma = getDb();
   if (!(await auth()))
     return Response.json({ error: "Unauthorized" }, { status: 401 });
 

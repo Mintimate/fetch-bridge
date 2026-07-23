@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight, Download, LogOut } from "lucide-react";
 import { signOut } from "@/auth";
-import { prisma } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { formatShanghaiDate } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BridgeUrlForm } from "@/components/bridge-url-form";
@@ -9,6 +9,7 @@ import { BridgeUrlForm } from "@/components/bridge-url-form";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  const prisma = getDb();
   const routes = await prisma.route.findMany({
     where: { enabled: true, isPublic: true, source: { enabled: true } },
     include: { source: true },

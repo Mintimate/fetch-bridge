@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "fetch-bridge-download",
+  "main": "workers/download.ts",
+  "compatibility_date": "2026-07-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "routes": [
+    {
+      // This path route takes precedence over the main app's Custom Domain.
+      "pattern": "fetch-bridge.example.com/download/*",
+      "zone_name": "example.com",
+    },
+  ],
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "head_sampling_rate": 1,
+    },
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "fetch-bridge",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "prisma/sqlite/migrations",
+      "migrations_pattern": "prisma/sqlite/migrations/*/migration.sql",
+    },
+  ],
+}

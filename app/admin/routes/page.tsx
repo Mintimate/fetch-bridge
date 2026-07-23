@@ -1,8 +1,9 @@
-import { prisma } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { RouteForm } from "@/components/admin/forms";
 import { RouteManagement } from "@/components/admin/route-management";
 export const dynamic = "force-dynamic";
 export default async function RoutesPage() {
+  const prisma = getDb();
   const [records, sources] = await Promise.all([
     prisma.route.findMany({
       include: { source: true },

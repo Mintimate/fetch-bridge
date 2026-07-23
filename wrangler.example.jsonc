@@ -1,0 +1,29 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "fetch-bridge",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-07-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "routes": [
+    {
+      "pattern": "fetch-bridge.example.com",
+      "custom_domain": true,
+    },
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+  "observability": {
+    "enabled": true,
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "fetch-bridge",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "prisma/sqlite/migrations",
+      "migrations_pattern": "prisma/sqlite/migrations/*/migration.sql",
+    },
+  ],
+}

@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { getDb } from "@/lib/db";
 export const dynamic = "force-dynamic";
 import { formatShanghaiDateTime } from "@/lib/utils";
 
@@ -26,6 +26,7 @@ function legacyUpstreamUrl(log: {
 }
 
 export default async function LogsPage() {
+  const prisma = getDb();
   const logs = await prisma.downloadLog.findMany({
     include: { route: { include: { source: true } } },
     orderBy: { createdAt: "desc" },

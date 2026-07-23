@@ -3,6 +3,16 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
+if [[ ! -f wrangler.jsonc ]]; then
+  cp wrangler.example.jsonc wrangler.jsonc
+  echo "Created wrangler.jsonc from wrangler.example.jsonc."
+fi
+
+if [[ ! -f wrangler.download.jsonc ]]; then
+  cp wrangler.download.example.jsonc wrangler.download.jsonc
+  echo "Created wrangler.download.jsonc from wrangler.download.example.jsonc."
+fi
+
 if [[ ! -f .env ]]; then
   cp .env.example .env
   echo "Created .env from .env.example. Configure admin credentials before using /admin."
@@ -19,7 +29,7 @@ if [[ ! -d node_modules ]]; then
 fi
 
 echo "Applying database migrations…"
-npm run db:migrate:deploy
+npm run db:d1:migrate:local
 
 echo "Seeding local download route…"
 npm run db:seed

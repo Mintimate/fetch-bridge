@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://fetch-bridge.vercel.app",
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://fetch-bridge.example.com",
   ),
   title: {
     default: "Fetch Bridge · 私有下载中继",

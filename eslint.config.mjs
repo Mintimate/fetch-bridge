@@ -2,7 +2,16 @@ import parser from "@typescript-eslint/parser";
 import nextPlugin from "@next/eslint-plugin-next";
 
 export default [
-  { ignores: [".next/**", "node_modules/**", "prisma/generated/**"] },
+  {
+    ignores: [
+      ".next/**",
+      ".open-next/**",
+      ".wrangler/**",
+      "node_modules/**",
+      "prisma/generated/**",
+      "workers/*-env.d.ts",
+    ],
+  },
   {
     files: ["**/*.{js,mjs,ts,tsx}"],
     languageOptions: { parser },
@@ -10,7 +19,7 @@ export default [
     rules: {
       ...nextPlugin.configs.recommended.rules,
       "no-console": "warn",
-      "no-debugger": "error"
-    }
-  }
+      "no-debugger": "error",
+    },
+  },
 ];

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { prisma } from "@/lib/db";
+import { getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 function Metric({
@@ -20,6 +20,7 @@ function Metric({
   );
 }
 export default async function DashboardPage() {
+  const prisma = getDb();
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const today = { createdAt: { gte: start } };

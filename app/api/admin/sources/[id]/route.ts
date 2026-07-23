@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { databaseErrorResponse } from "@/lib/api-errors";
-import { prisma } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { sourceSchema } from "@/lib/schemas";
 import { assertPublicDns, assertSafeSourceUrl } from "@/lib/source-security";
 
@@ -17,6 +17,7 @@ async function validatedSource(request: Request) {
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
+  const prisma = getDb();
   if (!(await auth()))
     return Response.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -50,6 +51,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 }
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
+  const prisma = getDb();
   if (!(await auth()))
     return Response.json({ error: "Unauthorized" }, { status: 401 });
 
