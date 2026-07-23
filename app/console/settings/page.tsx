@@ -1,5 +1,7 @@
-import { KeyRound } from "lucide-react";
+import { Download, KeyRound, Upload } from "lucide-react";
 import { auth } from "@/auth";
+import { Button } from "@/components/ui/button";
+import { ConfigImport } from "@/components/config-import";
 import { PasskeyManagement } from "@/components/passkey-management";
 import { getDb } from "@/lib/db";
 import { removePasskey, updatePasskeyName } from "./actions";
@@ -46,6 +48,28 @@ export default async function SettingsPage() {
             removePasskey={removePasskey}
             updatePasskeyName={updatePasskeyName}
           />
+        </section>
+        <section className="rounded-lg border p-5">
+          <div className="flex items-start gap-3">
+            <div className="rounded-md bg-muted p-2">
+              <Upload className="h-4 w-4" />
+            </div>
+            <div className="w-full">
+              <h2 className="font-medium">配置导入与导出</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                导出全部 Source 与 Route（路由以源站名称引用），可用于备份或在环境间迁移。导入按名称幂等合并，不会删除已有配置。
+              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <Button asChild variant="outline">
+                  <a href="/api/admin/export">
+                    <Download className="h-4 w-4" />
+                    导出配置
+                  </a>
+                </Button>
+                <ConfigImport />
+              </div>
+            </div>
+          </div>
         </section>
         <section className="rounded-lg border p-5">
           <h2 className="font-medium">安全策略</h2>
