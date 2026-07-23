@@ -23,7 +23,7 @@ export async function resolveRoute(requestPath: string[]) {
 function clientIp(request: Request) { return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null; }
 
 async function writeLog(resolved: Exclude<ResolvedRoute, null>, status: number, started: number, bytes: number, request: Request) {
-  try { await prisma.downloadLog.create({ data: { routeId: resolved.route.id, sourceName: resolved.route.source.name, path: resolved.requestedPath, status, durationMs: Date.now() - started, bytes: BigInt(bytes), clientIp: clientIp(request) } }); } catch { /* telemetry must not interrupt a download */ }
+  try { await prisma.downloadLog.create({ data: { routeId: resolved.route.id, sourceName: resolved.route.source.name, path: resolved.requestedPath, upstreamUrl: resolved.target.toString(), status, durationMs: Date.now() - started, bytes: BigInt(bytes), clientIp: clientIp(request) } }); } catch { /* telemetry must not interrupt a download */ }
 }
 
 export async function relayDownload(request: Request, path: string[]) {

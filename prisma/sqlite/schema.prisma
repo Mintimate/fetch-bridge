@@ -106,6 +106,7 @@ model DownloadLog {
   route      Route?   @relation(fields: [routeId], references: [id], onDelete: SetNull)
   sourceName String
   path       String
+  upstreamUrl String?
   status     Int
   durationMs Int
   bytes      BigInt   @default(0)
