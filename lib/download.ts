@@ -3,8 +3,8 @@ import "server-only";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 import { getDb } from "@/lib/db";
+import { assertPublicDns } from "@/lib/dns";
 import {
-  assertPublicDns,
   assertSafeSourceUrl,
   buildDownloadResponseHeaders,
   buildUpstreamHeaders,

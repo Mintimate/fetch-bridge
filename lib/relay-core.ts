@@ -1,6 +1,3 @@
-import { resolve4, resolve6 } from "node:dns/promises";
-import { isIP } from "node:net";
-
 const BLOCKED_REQUEST_HEADERS = new Set([
   "authorization",
   "connection",
@@ -34,7 +31,7 @@ const DOWNLOAD_RESPONSE_HEADERS = [
   "last-modified",
 ] as const;
 
-function normalizeAddress(address: string) {
+export function normalizeAddress(address: string) {
   return address.toLowerCase().replace(/^\[|\]$/g, "");
 }
 
@@ -59,6 +56,16 @@ function isPrivateIpv4(address: string) {
     (first === 198 && (second === 18 || second === 19)) ||
     first >= 224
   );
+}
+
+export function isIP(value: string): 0 | 4 | 6 {
+  if (/^(?:\d{1,3}\.){3}\d{1,3}$/.test(value)) {
+    const parts = value.split(".").map(Number);
+    if (parts.every((part) => Number.isInteger(part) && part >= 0 && part <= 255))
+      return 4;
+  }
+  if (value.includes(":") && /^[0-9a-fA-F:]+$/.test(value)) return 6;
+  return 0;
 }
 
 export function isPrivateAddress(address: string) {
@@ -94,23 +101,6 @@ export function assertSafeSourceUrl(raw: string) {
     throw new Error("Source must be a credential-free public HTTPS URL");
   }
   return url;
-}
-
-/** Resolve on every request so DNS rebinding cannot redirect a configured host to a private address. */
-export async function assertPublicDns(url: URL) {
-  const hostname = normalizeAddress(url.hostname);
-  const addresses = isIP(hostname)
-    ? [hostname]
-    : (await Promise.allSettled([resolve4(hostname), resolve6(hostname)]))
-        .filter(
-          (result): result is PromiseFulfilledResult<string[]> =>
-            result.status === "fulfilled",
-        )
-        .flatMap((result) => result.value);
-
-  if (!addresses.length || addresses.some(isPrivateAddress)) {
-    throw new Error("Source hostname resolves to a local or private address");
-  }
 }
 
 export function resolveUpstreamUrl(

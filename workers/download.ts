@@ -1,7 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 
 import {
-  assertPublicDns,
   assertSafeSourceUrl,
   buildDownloadResponseHeaders,
   buildUpstreamHeaders,
@@ -10,6 +9,7 @@ import {
   responseContentLength,
   sourceTimeout,
 } from "../lib/relay-core";
+import { assertPublicDns } from "../lib/dns";
 
 type DownloadRoute = {
   routeId: string;

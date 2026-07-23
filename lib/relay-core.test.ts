@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { assertPublicDns } from "./dns";
 import {
   assertSafeSourceUrl,
   buildUpstreamHeaders,
@@ -98,4 +99,23 @@ test("normalizes untrusted timeout and content-length values", () => {
     responseContentLength(new Headers({ "content-length": "invalid" })),
     0,
   );
+});
+
+test("assertPublicDns accepts public hosts and rejects private or unresolvable ones", async () => {
+  await assertPublicDns(new URL("https://example.com"));
+
+  for (const host of [
+    "localhost",
+    "127.0.0.1",
+    "10.0.0.1",
+    "192.168.1.1",
+    "this-host-does-not-exist.invalid",
+    "private-name.localhost",
+  ]) {
+    await assert.rejects(
+      () => assertPublicDns(new URL(`https://${host}`)),
+      /local or private address/,
+      host,
+    );
+  }
 });
