@@ -86,8 +86,10 @@ export function SourceForm() {
 }
 export function RouteForm({
   sources,
+  defaultSourceId,
 }: {
   sources: { id: string; name: string }[];
+  defaultSourceId?: string;
 }) {
   const [message, setMessage] = useState("");
   async function submit(data: FormData) {
@@ -137,6 +139,7 @@ export function RouteForm({
       <select
         name="sourceId"
         required
+        defaultValue={defaultSourceId}
         className="h-9 rounded-md border bg-background px-3 text-sm"
       >
         <option value="">选择 Source</option>

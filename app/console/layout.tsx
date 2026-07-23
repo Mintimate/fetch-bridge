@@ -5,18 +5,16 @@ import {
   Download,
   FileText,
   Home,
-  Route,
   Settings,
 } from "lucide-react";
 import { auth, signOut } from "@/auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const navigation = [
-  ["Dashboard", "/console", BarChart3],
-  ["Sources", "/console/sources", Download],
-  ["Routes", "/console/routes", Route],
-  ["Logs", "/console/logs", FileText],
-  ["Settings", "/console/settings", Settings],
+  ["概览", "/console", BarChart3],
+  ["源站与路由", "/console/sources", Download],
+  ["下载日志", "/console/logs", FileText],
+  ["设置", "/console/settings", Settings],
 ] as const;
 
 export default async function ConsoleLayout({

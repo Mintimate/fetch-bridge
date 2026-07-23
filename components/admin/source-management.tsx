@@ -17,6 +17,8 @@ type Source = {
 
 type SourceManagementProps = {
   sources: Source[];
+  selectedId?: string | null;
+  onSelect?: (id: string) => void;
 };
 
 function errorMessage(data: unknown, fallback: string) {
@@ -147,7 +149,11 @@ function SourceEditor({
   );
 }
 
-export function SourceManagement({ sources }: SourceManagementProps) {
+export function SourceManagement({
+  sources,
+  selectedId,
+  onSelect,
+}: SourceManagementProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -179,14 +185,23 @@ export function SourceManagement({ sources }: SourceManagementProps) {
         <span>路由 / 状态</span>
       </div>
       {sources.map((source) => (
-        <div key={source.id} className="border-b px-5 py-4 last:border-0">
+        <div
+          key={source.id}
+          className={`border-b px-5 py-4 last:border-0 ${
+            selectedId === source.id ? "bg-muted" : ""
+          }`}
+        >
           <div className="flex gap-4">
-            <div className="min-w-0 flex-1">
+            <button
+              type="button"
+              onClick={() => onSelect?.(source.id)}
+              className="min-w-0 flex-1 text-left"
+            >
               <p className="font-medium">{source.name}</p>
               <p className="mt-1 break-all text-sm text-muted-foreground">
                 {source.baseUrl}
               </p>
-            </div>
+            </button>
             <div className="shrink-0 text-right text-sm">
               <p>{source.routeCount} routes</p>
               <p
