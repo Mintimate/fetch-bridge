@@ -8,9 +8,7 @@ const authConfig = {
       if (
         nextUrl.pathname === "/login" ||
         nextUrl.pathname.startsWith("/download/") ||
-        nextUrl.pathname.startsWith("/api/auth") ||
-        nextUrl.pathname === "/admin" ||
-        nextUrl.pathname.startsWith("/admin/")
+        nextUrl.pathname.startsWith("/api/auth")
       )
         return true;
       return Boolean(auth);
