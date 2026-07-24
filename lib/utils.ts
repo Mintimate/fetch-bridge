@@ -5,6 +5,18 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 const shanghaiTimeZone = "Asia/Shanghai";
+const shanghaiOffsetMs = 8 * 60 * 60 * 1000;
+
+export function startOfShanghaiDay(date = new Date()) {
+  const shanghaiDate = new Date(date.getTime() + shanghaiOffsetMs);
+  return new Date(
+    Date.UTC(
+      shanghaiDate.getUTCFullYear(),
+      shanghaiDate.getUTCMonth(),
+      shanghaiDate.getUTCDate(),
+    ) - shanghaiOffsetMs,
+  );
+}
 
 export function formatShanghaiDate(date: Date) {
   return new Intl.DateTimeFormat("zh-CN", {
