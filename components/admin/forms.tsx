@@ -1,36 +1,21 @@
 "use client";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { adminFetch } from "@/components/admin/fetch";
 
-async function post(path: string, payload: unknown) {
-  const response = await fetch(path, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  const data: unknown = await response.json().catch(() => null);
-  if (!response.ok)
-    throw new Error(
-      data &&
-        typeof data === "object" &&
-        "error" in data &&
-        typeof data.error === "string"
-        ? data.error
-        : "保存失败，请检查字段或重复的路径。",
-    );
-}
+const SAVE_FALLBACK = "保存失败，请检查字段或重复的路径。";
 export function SourceForm() {
   const [message, setMessage] = useState("");
   async function submit(data: FormData) {
     try {
       const headers = JSON.parse(String(data.get("headers") || "{}"));
-      await post("/api/admin/sources", {
+      await adminFetch("/api/admin/sources", "POST", {
         name: data.get("name"),
         baseUrl: data.get("baseUrl"),
         timeoutMs: Number(data.get("timeoutMs") || 30000),
         userAgent: data.get("userAgent"),
         headers,
-      });
+      }, SAVE_FALLBACK);
       window.location.reload();
     } catch (error) {
       setMessage(
@@ -94,7 +79,7 @@ export function RouteForm({
   const [message, setMessage] = useState("");
   async function submit(data: FormData) {
     try {
-      await post("/api/admin/routes", {
+      await adminFetch("/api/admin/routes", "POST", {
         name: data.get("name"),
         description: data.get("description"),
         pathPrefix: data.get("pathPrefix"),
@@ -102,7 +87,7 @@ export function RouteForm({
         sourceId: data.get("sourceId"),
         enabled: true,
         isPublic: true,
-      });
+      }, SAVE_FALLBACK);
       window.location.reload();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "保存失败");

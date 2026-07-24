@@ -3,6 +3,7 @@
 import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { adminFetch } from "@/components/admin/fetch";
 
 type SourceOption = { id: string; name: string; enabled: boolean };
 
@@ -20,30 +21,6 @@ type Route = {
 
 type RouteManagementProps = { routes: Route[]; sources: SourceOption[] };
 
-function errorMessage(data: unknown, fallback: string) {
-  return data &&
-    typeof data === "object" &&
-    "error" in data &&
-    typeof data.error === "string"
-    ? data.error
-    : fallback;
-}
-
-async function request(
-  path: string,
-  method: "PATCH" | "DELETE",
-  payload?: unknown,
-) {
-  const response = await fetch(path, {
-    method,
-    headers: payload ? { "content-type": "application/json" } : undefined,
-    body: payload ? JSON.stringify(payload) : undefined,
-  });
-  const data: unknown = await response.json().catch(() => null);
-  if (!response.ok)
-    throw new Error(errorMessage(data, "操作失败，请稍后重试。"));
-}
-
 function RouteEditor({
   route,
   sources,
@@ -60,7 +37,7 @@ function RouteEditor({
     setMessage("");
     setIsSaving(true);
     try {
-      await request(`/api/admin/routes/${route.id}`, "PATCH", {
+      await adminFetch(`/api/admin/routes/${route.id}`, "PATCH", {
         name: formData.get("name"),
         description: formData.get("description"),
         pathPrefix: formData.get("pathPrefix"),
@@ -167,7 +144,7 @@ export function RouteManagement({ routes, sources }: RouteManagementProps) {
     setMessage("");
     setDeletingId(route.id);
     try {
-      await request(`/api/admin/routes/${route.id}`, "DELETE");
+      await adminFetch(`/api/admin/routes/${route.id}`, "DELETE");
       window.location.reload();
     } catch (error) {
       setMessage(

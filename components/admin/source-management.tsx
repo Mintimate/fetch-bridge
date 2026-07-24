@@ -3,6 +3,7 @@
 import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { adminFetch } from "@/components/admin/fetch";
 
 type Source = {
   id: string;
@@ -20,30 +21,6 @@ type SourceManagementProps = {
   selectedId?: string | null;
   onSelect?: (id: string) => void;
 };
-
-function errorMessage(data: unknown, fallback: string) {
-  return data &&
-    typeof data === "object" &&
-    "error" in data &&
-    typeof data.error === "string"
-    ? data.error
-    : fallback;
-}
-
-async function request(
-  path: string,
-  method: "PATCH" | "DELETE",
-  payload?: unknown,
-) {
-  const response = await fetch(path, {
-    method,
-    headers: payload ? { "content-type": "application/json" } : undefined,
-    body: payload ? JSON.stringify(payload) : undefined,
-  });
-  const data: unknown = await response.json().catch(() => null);
-  if (!response.ok)
-    throw new Error(errorMessage(data, "操作失败，请稍后重试。"));
-}
 
 function parsedHeaders(headersJson: string) {
   try {
@@ -71,7 +48,7 @@ function SourceEditor({
     setIsSaving(true);
     try {
       const headers = JSON.parse(String(formData.get("headers") || "{}"));
-      await request(`/api/admin/sources/${source.id}`, "PATCH", {
+      await adminFetch(`/api/admin/sources/${source.id}`, "PATCH", {
         name: formData.get("name"),
         baseUrl: formData.get("baseUrl"),
         enabled: formData.get("enabled") === "on",
@@ -168,7 +145,7 @@ export function SourceManagement({
     setMessage("");
     setDeletingId(source.id);
     try {
-      await request(`/api/admin/sources/${source.id}`, "DELETE");
+      await adminFetch(`/api/admin/sources/${source.id}`, "DELETE");
       window.location.reload();
     } catch (error) {
       setMessage(
