@@ -3,13 +3,18 @@
 import {
   assertSafeSourceUrl,
   buildDownloadResponseHeaders,
-  buildUpstreamHeaders,
   requestClientIp,
   resolveUpstreamUrl,
   responseContentLength,
   sourceTimeout,
 } from "../lib/relay-core";
 import { assertPublicDns } from "../lib/dns";
+import {
+  isByteRangeResponseCoherent,
+  isIdentitySocketCandidate,
+} from "../lib/http1";
+import { fetchUpstream } from "../lib/upstream";
+import { fetchIdentityHttp1 } from "./identity-http";
 
 type DownloadRoute = {
   routeId: string;
@@ -60,9 +65,9 @@ async function resolveRoute(env: DownloadWorkerEnv, requestedPath: string) {
 
 async function writeDownloadLog(
   env: DownloadWorkerEnv,
-  route: DownloadRoute,
+  route: DownloadRoute | null,
   requestedPath: string,
-  upstreamUrl: string,
+  upstreamUrl: string | null,
   status: number,
   started: number,
   bytes: number,
@@ -70,21 +75,28 @@ async function writeDownloadLog(
 ) {
   await env.DB.prepare(
     `INSERT INTO DownloadLog
-      (id, routeId, sourceName, path, upstreamUrl, status, durationMs, bytes, clientIp)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)`,
+      (id, routeId, sourceName, path, upstreamUrl, status, durationMs, bytes, clientIp, createdAt)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)`,
   )
     .bind(
       crypto.randomUUID(),
-      route.routeId,
-      route.sourceName,
+      route?.routeId ?? null,
+      route?.sourceName ?? "Fetch Bridge",
       requestedPath,
       upstreamUrl,
       status,
       Date.now() - started,
       bytes,
       requestClientIp(request),
+      new Date().toISOString(),
     )
     .run();
+}
+
+function requestLogPath(request: Request) {
+  const pathname = new URL(request.url).pathname;
+  if (!pathname.startsWith(DOWNLOAD_PREFIX)) return pathname;
+  return pathname.slice(DOWNLOAD_PREFIX.length) || "/";
 }
 
 function logInBackground(
@@ -116,6 +128,20 @@ async function relayDownload(
   const requestedPath = requestPath(url);
   const route = await resolveRoute(env, requestedPath);
   if (!route) {
+    logInBackground(
+      ctx,
+      writeDownloadLog(
+        env,
+        null,
+        requestedPath,
+        null,
+        404,
+        started,
+        0,
+        request,
+      ),
+      requestedPath,
+    );
     return new Response("Download route not found", { status: 404 });
   }
 
@@ -138,6 +164,20 @@ async function relayDownload(
         error: error instanceof Error ? error.message : String(error),
       }),
     );
+    logInBackground(
+      ctx,
+      writeDownloadLog(
+        env,
+        route,
+        requestedPath,
+        null,
+        400,
+        started,
+        0,
+        request,
+      ),
+      requestedPath,
+    );
     return new Response("Invalid download route", { status: 400 });
   }
 
@@ -146,32 +186,55 @@ async function relayDownload(
     () => controller.abort(),
     sourceTimeout(route.timeoutMs),
   );
-  const headers = buildUpstreamHeaders(
-    route.headersJson,
-    route.userAgent,
-    request.headers,
-  );
 
   try {
-    const upstream = await fetch(target, {
-      method: request.method,
-      headers,
+    let selectedTransport: "fetch" | "identity-socket" = "fetch";
+    const { response: upstream, finalUrl } = await fetchUpstream({
+      target,
+      method: request.method === "HEAD" ? "HEAD" : "GET",
+      configuredHeadersJson: route.headersJson,
+      userAgent: route.userAgent,
+      requestHeaders: request.headers,
       signal: controller.signal,
-      redirect: "manual",
+      fetcher: async (input, init) => {
+        const upstreamUrl = new URL(
+          input instanceof Request ? input.url : input.toString(),
+        );
+        const headers = new Headers(init?.headers);
+        const standard = await fetch(input, init);
+        if (
+          !isIdentitySocketCandidate(upstreamUrl, headers) ||
+          isByteRangeResponseCoherent(
+            headers.get("range"),
+            standard.status,
+            standard.headers,
+          )
+        ) {
+          selectedTransport = "fetch";
+          return standard;
+        }
+
+        await standard.body?.cancel().catch(() => {});
+        const identityResponse = await fetchIdentityHttp1(input, init);
+        selectedTransport = "identity-socket";
+        return identityResponse;
+      },
     });
 
     const responseHeaders = buildDownloadResponseHeaders(upstream.headers);
     responseHeaders.set("x-fetch-bridge-relay", "lightweight");
     responseHeaders.set("x-fetch-bridge-route", route.pathPrefix);
+    responseHeaders.set("x-fetch-bridge-transport", selectedTransport);
 
-    const bytes = responseContentLength(upstream.headers);
+    const bytes =
+      request.method === "HEAD" ? 0 : responseContentLength(upstream.headers);
     logInBackground(
       ctx,
       writeDownloadLog(
         env,
         route,
         requestedPath,
-        target.toString(),
+        finalUrl.toString(),
         upstream.status,
         started,
         bytes,
@@ -215,7 +278,23 @@ async function relayDownload(
 
 export default {
   async fetch(request, env, ctx) {
+    const started = Date.now();
+    const requestedPath = requestLogPath(request);
     if (request.method !== "GET" && request.method !== "HEAD") {
+      logInBackground(
+        ctx,
+        writeDownloadLog(
+          env,
+          null,
+          requestedPath,
+          null,
+          405,
+          started,
+          0,
+          request,
+        ),
+        requestedPath,
+      );
       return new Response("Method not allowed", {
         status: 405,
         headers: { allow: "GET, HEAD" },
@@ -230,6 +309,20 @@ export default {
           message: "download worker failed",
           error: error instanceof Error ? error.message : String(error),
         }),
+      );
+      logInBackground(
+        ctx,
+        writeDownloadLog(
+          env,
+          null,
+          requestedPath,
+          null,
+          500,
+          started,
+          0,
+          request,
+        ),
+        requestedPath,
       );
       return new Response("Download service unavailable", { status: 500 });
     }
