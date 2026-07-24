@@ -14,6 +14,7 @@ const BLOCKED_REQUEST_HEADERS = new Set([
 ]);
 const CONDITIONAL_REQUEST_HEADERS = [
   "range",
+  "if-range",
   "if-match",
   "if-none-match",
   "if-modified-since",
@@ -61,7 +62,9 @@ function isPrivateIpv4(address: string) {
 export function isIP(value: string): 0 | 4 | 6 {
   if (/^(?:\d{1,3}\.){3}\d{1,3}$/.test(value)) {
     const parts = value.split(".").map(Number);
-    if (parts.every((part) => Number.isInteger(part) && part >= 0 && part <= 255))
+    if (
+      parts.every((part) => Number.isInteger(part) && part >= 0 && part <= 255)
+    )
       return 4;
   }
   if (value.includes(":") && /^[0-9a-fA-F:]+$/.test(value)) return 6;
@@ -183,6 +186,10 @@ export function buildUpstreamHeaders(
     const value = requestHeaders.get(name);
     if (value) headers.set(name, value);
   }
+  // A compressed representation has a different byte address space. If an
+  // origin applies Range before Workers decompresses the response, the client
+  // receives more bytes than it requested and resumable downloads are corrupt.
+  headers.set("accept-encoding", "identity");
   return headers;
 }
 
