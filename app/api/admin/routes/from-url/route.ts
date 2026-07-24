@@ -2,13 +2,20 @@ import { auth } from "@/auth";
 import { getDb } from "@/lib/db";
 import { routeSchema, sourceSchema } from "@/lib/schemas";
 import { databaseErrorResponse } from "@/lib/api-errors";
+import { assertPublicDns } from "@/lib/dns";
+import { assertSafeSourceUrl } from "@/lib/relay-core";
 
 export async function POST(request: Request) {
   const prisma = getDb();
   if (!(await auth()))
     return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body: unknown = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "请求格式无效。" }, { status: 400 });
+  }
   if (!body || typeof body !== "object")
     return Response.json({ error: "请求格式无效。" }, { status: 400 });
 
@@ -58,9 +65,33 @@ export async function POST(request: Request) {
     });
     if (!savedSource)
       return Response.json({ error: "所选源站不存在。" }, { status: 400 });
+    try {
+      await assertPublicDns(assertSafeSourceUrl(savedSource.baseUrl));
+    } catch (error) {
+      return Response.json(
+        {
+          error:
+            error instanceof Error
+              ? error.message
+              : "所选源站地址不可安全访问。",
+        },
+        { status: 400 },
+      );
+    }
   } else {
     // Non-attach path: source is guaranteed present.
     const src = source as NonNullable<typeof source>;
+    try {
+      await assertPublicDns(assertSafeSourceUrl(src.baseUrl));
+    } catch (error) {
+      return Response.json(
+        {
+          error:
+            error instanceof Error ? error.message : "源站地址不可安全访问。",
+        },
+        { status: 400 },
+      );
+    }
     // Dedupe by origin: a source may already exist under a different name
     // for the same baseUrl, so resolve to it instead of creating a duplicate.
     const existingSource = await prisma.source.findFirst({

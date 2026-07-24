@@ -7,12 +7,12 @@ import { assertPublicDns } from "@/lib/dns";
 import {
   assertSafeSourceUrl,
   buildDownloadResponseHeaders,
-  buildUpstreamHeaders,
   requestClientIp,
   resolveUpstreamUrl,
   responseContentLength,
   sourceTimeout,
 } from "@/lib/relay-core";
+import { fetchUpstream } from "@/lib/upstream";
 
 type ResolvedRoute = Awaited<ReturnType<typeof resolveRoute>>;
 
@@ -20,7 +20,7 @@ export async function resolveRoute(requestPath: string[]) {
   const prisma = getDb();
   const requestedPath = `/${requestPath.join("/")}`;
   const candidates = await prisma.route.findMany({
-    where: { enabled: true, source: { enabled: true } },
+    where: { enabled: true, isPublic: true, source: { enabled: true } },
     include: { source: true },
   });
   candidates.sort((a, b) => b.pathPrefix.length - a.pathPrefix.length);
@@ -43,7 +43,9 @@ export async function resolveRoute(requestPath: string[]) {
 }
 
 async function writeLog(
-  resolved: Exclude<ResolvedRoute, null>,
+  resolved: Exclude<ResolvedRoute, null> | null,
+  requestedPath: string,
+  upstreamUrl: string | null,
   status: number,
   started: number,
   bytes: number,
@@ -51,10 +53,10 @@ async function writeLog(
 ) {
   await getDb().downloadLog.create({
     data: {
-      routeId: resolved.route.id,
-      sourceName: resolved.route.source.name,
-      path: resolved.requestedPath,
-      upstreamUrl: resolved.target.toString(),
+      routeId: resolved?.route.id ?? null,
+      sourceName: resolved?.route.source.name ?? "Fetch Bridge",
+      path: requestedPath,
+      upstreamUrl,
       status,
       durationMs: Date.now() - started,
       bytes: BigInt(bytes),
@@ -90,34 +92,46 @@ export async function relayDownload(request: Request, path: string[]) {
     console.warn("[download] Route resolution failed", {
       message: error instanceof Error ? error.message : String(error),
     });
+    const requestedPath = `/${path.join("/")}`;
+    scheduleLog(writeLog(null, requestedPath, null, 400, started, 0, request));
     return new Response("Invalid download route", { status: 400 });
   }
-  if (!resolved)
+  if (!resolved) {
+    const requestedPath = `/${path.join("/")}`;
+    scheduleLog(writeLog(null, requestedPath, null, 404, started, 0, request));
     return new Response("Download route not found", { status: 404 });
+  }
 
   const controller = new AbortController();
   const timer = setTimeout(
     () => controller.abort(),
     sourceTimeout(resolved.route.source.timeoutMs),
   );
-  const headers = buildUpstreamHeaders(
-    resolved.route.source.headersJson,
-    resolved.route.source.userAgent,
-    request.headers,
-  );
 
   try {
-    const upstream = await fetch(resolved.target, {
-      method: request.method,
-      headers,
+    const { response: upstream, finalUrl } = await fetchUpstream({
+      target: resolved.target,
+      method: request.method === "HEAD" ? "HEAD" : "GET",
+      configuredHeadersJson: resolved.route.source.headersJson,
+      userAgent: resolved.route.source.userAgent,
+      requestHeaders: request.headers,
       signal: controller.signal,
-      redirect: "manual",
-      cache: "no-store",
     });
     const responseHeaders = buildDownloadResponseHeaders(upstream.headers);
     responseHeaders.set("x-fetch-bridge-route", resolved.route.pathPrefix);
-    const bytes = responseContentLength(upstream.headers);
-    scheduleLog(writeLog(resolved, upstream.status, started, bytes, request));
+    const bytes =
+      request.method === "HEAD" ? 0 : responseContentLength(upstream.headers);
+    scheduleLog(
+      writeLog(
+        resolved,
+        resolved.requestedPath,
+        finalUrl.toString(),
+        upstream.status,
+        started,
+        bytes,
+        request,
+      ),
+    );
     return new Response(request.method === "HEAD" ? null : upstream.body, {
       status: upstream.status,
       headers: responseHeaders,
@@ -128,7 +142,17 @@ export async function relayDownload(request: Request, path: string[]) {
       path: resolved.requestedPath,
       message: error instanceof Error ? error.message : String(error),
     });
-    scheduleLog(writeLog(resolved, 502, started, 0, request));
+    scheduleLog(
+      writeLog(
+        resolved,
+        resolved.requestedPath,
+        resolved.target.toString(),
+        502,
+        started,
+        0,
+        request,
+      ),
+    );
     return new Response("Upstream download unavailable", { status: 502 });
   } finally {
     clearTimeout(timer);

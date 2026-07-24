@@ -42,6 +42,7 @@ const ROUTE_QUERY = `
   FROM Route AS r
   INNER JOIN Source AS s ON s.id = r.sourceId
   WHERE r.enabled = 1
+    AND r.isPublic = 1
     AND s.enabled = 1
     AND (
       ?1 = r.pathPrefix

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getDb } from "@/lib/db";
+import { startOfShanghaiDay } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 function Metric({
@@ -21,8 +22,7 @@ function Metric({
 }
 export default async function DashboardPage() {
   const prisma = getDb();
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
+  const start = startOfShanghaiDay();
   const today = { createdAt: { gte: start } };
   const [summary, failed, routeCount, logs] = await Promise.all([
     prisma.downloadLog.aggregate({
@@ -32,7 +32,9 @@ export default async function DashboardPage() {
       _avg: { durationMs: true },
     }),
     prisma.downloadLog.count({ where: { ...today, status: { gte: 400 } } }),
-    prisma.route.count({ where: { enabled: true } }),
+    prisma.route.count({
+      where: { enabled: true, isPublic: true, source: { enabled: true } },
+    }),
     prisma.downloadLog.findMany({
       include: { route: true },
       orderBy: { createdAt: "desc" },
@@ -52,7 +54,7 @@ export default async function DashboardPage() {
         <Metric
           label="今日请求"
           value={String(total)}
-          hint={`${routeCount} 个启用路由`}
+          hint={`${routeCount} 个可用公开路由`}
         />
         <Metric
           label="中继流量"
@@ -98,7 +100,7 @@ export default async function DashboardPage() {
           ))}
           {!logs.length && (
             <p className="p-5 text-sm text-muted-foreground">
-              今天还没有下载请求。
+              还没有下载请求记录。
             </p>
           )}
         </div>

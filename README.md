@@ -16,6 +16,9 @@ fetch-bridge.example.com
 
 轻量下载 Worker 不加载 Next.js、OpenNext 或 Prisma WASM，适合 Cloudflare Workers 免费套餐较短的 CPU 时间限制。它只接受 `GET` 与 `HEAD`，并在每次请求时校验上游 HTTPS 地址和 DNS 解析结果。
 
+只有同时启用且标记为公开的 Route 才能通过 `/download/*` 访问；私有
+Route 不会被下载 Worker 匹配。
+
 ## 快速开始
 
 ```bash

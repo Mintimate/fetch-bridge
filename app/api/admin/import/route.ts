@@ -2,6 +2,8 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { getDb } from "@/lib/db";
 import { routeSchema, sourceSchema } from "@/lib/schemas";
+import { assertPublicDns } from "@/lib/dns";
+import { assertSafeSourceUrl } from "@/lib/relay-core";
 
 // Route's `source` is a name (carried in export), resolved to a sourceId at
 // import time. It must reference a source present in this same config.
@@ -18,7 +20,10 @@ const configSchema = (sourceNames: Set<string>) =>
         importRouteSchema.extend({
           source: z
             .string()
-            .refine((name) => sourceNames.has(name), "路由引用了未知的源站名称"),
+            .refine(
+              (name) => sourceNames.has(name),
+              "路由引用了未知的源站名称",
+            ),
         }),
       )
       .default([]),
@@ -32,7 +37,10 @@ export async function POST(request: Request) {
   try {
     payload = await request.json();
   } catch {
-    return Response.json({ error: "配置文件必须是有效 JSON。" }, { status: 400 });
+    return Response.json(
+      { error: "配置文件必须是有效 JSON。" },
+      { status: 400 },
+    );
   }
 
   // Validate the whole payload before touching the database: D1 offers no
@@ -53,6 +61,20 @@ export async function POST(request: Request) {
 
   const prisma = getDb();
   const { sources, routes } = parsed.data;
+
+  for (const source of sources) {
+    try {
+      await assertPublicDns(assertSafeSourceUrl(source.baseUrl));
+    } catch (error) {
+      return Response.json(
+        {
+          error: `源站“${source.name}”不可安全访问。`,
+          details: error instanceof Error ? error.message : "Invalid source",
+        },
+        { status: 400 },
+      );
+    }
+  }
 
   // Idempotent upsert by unique name — never deletes, so an import cannot
   // wipe existing config.

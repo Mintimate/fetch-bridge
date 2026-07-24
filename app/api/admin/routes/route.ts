@@ -7,7 +7,13 @@ export async function POST(request: Request) {
   const prisma = getDb();
   if (!(await auth()))
     return Response.json({ error: "Unauthorized" }, { status: 401 });
-  const parsed = routeSchema.safeParse(await request.json());
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "请求内容无效。" }, { status: 400 });
+  }
+  const parsed = routeSchema.safeParse(body);
   if (!parsed.success)
     return Response.json({ error: parsed.error.flatten() }, { status: 400 });
   try {
