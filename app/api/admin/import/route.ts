@@ -77,34 +77,22 @@ export async function POST(request: Request) {
   }
 
   // Idempotent upsert by unique name — never deletes, so an import cannot
-  // wipe existing config.
+  // wipe existing config. One query per source/route: D1 has no batch upsert.
   const sourceIdByName = new Map<string, string>();
   for (const source of sources) {
     const headersJson = JSON.stringify(source.headers ?? {});
-    const existing = await prisma.source.findUnique({
+    const data = {
+      baseUrl: source.baseUrl,
+      enabled: source.enabled,
+      timeoutMs: source.timeoutMs,
+      userAgent: source.userAgent || null,
+      headersJson,
+    };
+    const saved = await prisma.source.upsert({
       where: { name: source.name },
+      create: { name: source.name, ...data },
+      update: data,
     });
-    const saved = existing
-      ? await prisma.source.update({
-          where: { name: source.name },
-          data: {
-            baseUrl: source.baseUrl,
-            enabled: source.enabled,
-            timeoutMs: source.timeoutMs,
-            userAgent: source.userAgent || null,
-            headersJson,
-          },
-        })
-      : await prisma.source.create({
-          data: {
-            name: source.name,
-            baseUrl: source.baseUrl,
-            enabled: source.enabled,
-            timeoutMs: source.timeoutMs,
-            userAgent: source.userAgent || null,
-            headersJson,
-          },
-        });
     sourceIdByName.set(saved.name, saved.id);
   }
 

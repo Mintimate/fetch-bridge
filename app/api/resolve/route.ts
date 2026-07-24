@@ -56,6 +56,10 @@ export async function POST(request: Request) {
     where: { enabled: true, isPublic: true, source: { enabled: true } },
     include: { source: true },
   });
+  // Sort by targetPath length, longest first, so the most specific mapping
+  // wins when several routes share an origin with overlapping target paths.
+  // Without this the match order is whatever D1 returns (nondeterministic).
+  routes.sort((a, b) => b.targetPath.length - a.targetPath.length);
   for (const route of routes) {
     try {
       const source = assertSafeSourceUrl(route.source.baseUrl);
