@@ -203,6 +203,29 @@ export function buildDownloadResponseHeaders(upstreamHeaders: Headers) {
   return headers;
 }
 
+/**
+ * Assemble the client-facing download response from an upstream response.
+ * `lightweight` marks responses served by the dedicated download Worker so the
+ * 1102 diagnostic in docs/README.md can tell the two paths apart. `transport`
+ * records whether the identity TLS fallback was used for this Range request.
+ */
+export function buildRelayResponse(
+  upstream: Response,
+  method: string,
+  pathPrefix: string,
+  transport: "fetch" | "identity-socket",
+  lightweight: boolean,
+) {
+  const headers = buildDownloadResponseHeaders(upstream.headers);
+  if (lightweight) headers.set("x-fetch-bridge-relay", "lightweight");
+  headers.set("x-fetch-bridge-route", pathPrefix);
+  headers.set("x-fetch-bridge-transport", transport);
+  return new Response(method === "HEAD" ? null : upstream.body, {
+    status: upstream.status,
+    headers,
+  });
+}
+
 export function responseContentLength(headers: Headers) {
   const bytes = Number(headers.get("content-length"));
   return Number.isSafeInteger(bytes) && bytes >= 0 ? bytes : 0;

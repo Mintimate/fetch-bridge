@@ -6,7 +6,7 @@ import { getDb } from "@/lib/db";
 import { assertPublicDns } from "@/lib/dns";
 import {
   assertSafeSourceUrl,
-  buildDownloadResponseHeaders,
+  buildRelayResponse,
   requestClientIp,
   resolveUpstreamUrl,
   responseContentLength,
@@ -117,8 +117,6 @@ export async function relayDownload(request: Request, path: string[]) {
       requestHeaders: request.headers,
       signal: controller.signal,
     });
-    const responseHeaders = buildDownloadResponseHeaders(upstream.headers);
-    responseHeaders.set("x-fetch-bridge-route", resolved.route.pathPrefix);
     const bytes =
       request.method === "HEAD" ? 0 : responseContentLength(upstream.headers);
     scheduleLog(
@@ -132,10 +130,13 @@ export async function relayDownload(request: Request, path: string[]) {
         request,
       ),
     );
-    return new Response(request.method === "HEAD" ? null : upstream.body, {
-      status: upstream.status,
-      headers: responseHeaders,
-    });
+    return buildRelayResponse(
+      upstream,
+      request.method,
+      resolved.route.pathPrefix,
+      "fetch",
+      false,
+    );
   } catch (error) {
     // eslint-disable-next-line no-console -- safe diagnostics without upstream credentials.
     console.warn("[download] Upstream request failed", {

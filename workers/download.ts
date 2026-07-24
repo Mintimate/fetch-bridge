@@ -2,7 +2,7 @@
 
 import {
   assertSafeSourceUrl,
-  buildDownloadResponseHeaders,
+  buildRelayResponse,
   requestClientIp,
   resolveUpstreamUrl,
   responseContentLength,
@@ -222,11 +222,6 @@ async function relayDownload(
       },
     });
 
-    const responseHeaders = buildDownloadResponseHeaders(upstream.headers);
-    responseHeaders.set("x-fetch-bridge-relay", "lightweight");
-    responseHeaders.set("x-fetch-bridge-route", route.pathPrefix);
-    responseHeaders.set("x-fetch-bridge-transport", selectedTransport);
-
     const bytes =
       request.method === "HEAD" ? 0 : responseContentLength(upstream.headers);
     logInBackground(
@@ -244,10 +239,13 @@ async function relayDownload(
       requestedPath,
     );
 
-    return new Response(request.method === "HEAD" ? null : upstream.body, {
-      status: upstream.status,
-      headers: responseHeaders,
-    });
+    return buildRelayResponse(
+      upstream,
+      request.method,
+      route.pathPrefix,
+      selectedTransport,
+      true,
+    );
   } catch (error) {
     // eslint-disable-next-line no-console -- structured production diagnostic.
     console.error(
