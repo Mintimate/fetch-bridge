@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { startOfShanghaiDay } from "@/lib/utils";
+import { LogRefreshControls } from "@/components/log-refresh-controls";
 
 export const dynamic = "force-dynamic";
 function Metric({
@@ -46,9 +47,12 @@ export default async function DashboardPage() {
   const average = Math.round(summary._avg.durationMs ?? 0);
   return (
     <>
-      <header className="mb-8">
-        <p className="text-sm text-muted-foreground">Dashboard</p>
-        <h1 className="mt-1 text-2xl font-semibold">下载概览</h1>
+      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-sm text-muted-foreground">Dashboard</p>
+          <h1 className="mt-1 text-2xl font-semibold">下载概览</h1>
+        </div>
+        <LogRefreshControls />
       </header>
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Metric

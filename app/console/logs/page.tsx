@@ -1,6 +1,7 @@
 import { getDb } from "@/lib/db";
 export const dynamic = "force-dynamic";
 import { formatShanghaiDateTime } from "@/lib/utils";
+import { LogRefreshControls } from "@/components/log-refresh-controls";
 
 function legacyUpstreamUrl(log: {
   path: string;
@@ -34,12 +35,15 @@ export default async function LogsPage() {
   });
   return (
     <>
-      <header className="mb-8">
-        <p className="text-sm text-muted-foreground">Logs</p>
-        <h1 className="mt-1 text-2xl font-semibold">下载日志</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          最近 100 条中继记录。日志失败不会影响实际下载。
-        </p>
+      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-sm text-muted-foreground">Logs</p>
+          <h1 className="mt-1 text-2xl font-semibold">下载日志</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            最近 100 条中继记录。日志失败不会影响实际下载。
+          </p>
+        </div>
+        <LogRefreshControls />
       </header>
       <section className="overflow-x-auto rounded-lg border">
         <table className="w-full min-w-[1300px] text-left text-sm">
