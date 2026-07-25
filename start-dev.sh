@@ -29,10 +29,10 @@ if [[ ! -d node_modules ]]; then
 fi
 
 echo "Applying database migrations…"
-npm run db:d1:migrate:local
+npm run task -- d1:local
 
 echo "Seeding local download route…"
-npm run db:seed
+npm run task -- db:seed
 
 echo "Starting Fetch Bridge at http://localhost:3000"
 exec npm run dev

@@ -17,6 +17,10 @@
   "observability": {
     "enabled": true,
   },
+  "vars": {
+    // NextAuth 在 Workers 上需要的普通变量，随部署自动生效，无需在 Dashboard 手动添加
+    "AUTH_TRUST_HOST": "true",
+  },
   "d1_databases": [
     {
       "binding": "DB",

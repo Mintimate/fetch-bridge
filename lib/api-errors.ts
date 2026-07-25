@@ -17,7 +17,7 @@ export function databaseErrorResponse(error: unknown) {
       return Response.json(
         {
           error:
-            "数据库表不存在。请先应用 SQLite 迁移；Cloudflare D1 使用 npm run db:d1:migrate:remote。",
+            "数据库表不存在。请先应用 SQLite 迁移；Cloudflare D1 使用 npm run task -- d1:remote。",
         },
         { status: 503 },
       );

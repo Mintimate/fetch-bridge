@@ -12,11 +12,11 @@
 常用命令：
 
 ```bash
-npm run db:migrate                 # 本地 SQLite 新迁移
-npm run db:generate                # 生成 SQLite Prisma Client
-npm run db:d1:migrate:local        # 应用迁移到本地 D1
-npm run db:d1:migrate:remote       # 应用迁移到远程 D1
-npm run db:seed                    # 写入本地 D1 示例路由
+npm run task -- db:migrate    # 本地 SQLite 新迁移
+npm run task -- db:generate   # 生成 SQLite Prisma Client
+npm run task -- d1:local      # 应用迁移到本地 D1
+npm run task -- d1:remote     # 应用迁移到远程 D1
+npm run task -- db:seed       # 写入本地 D1 示例路由
 ```
 
 Prisma Client 在 Workers 中通过 `@prisma/adapter-d1` 使用每个请求的 D1 binding 创建；不要跨请求复用数据库客户端。
