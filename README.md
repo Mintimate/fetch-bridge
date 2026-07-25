@@ -1,6 +1,138 @@
 # Fetch Bridge
 
-一个由管理员预先配置路由的下载中继服务，运行在 Cloudflare Workers + D1 上。它**不接受任意 URL**：只有后台审核过的 `Source` 与 `Route` 才能通过 `/download/<前缀>/...` 访问，并直接流式转发上游文件。
+自托管的**下载中继服务**：管理员在后台预先配置"哪些文件可以下"，服务把上游公开文件流式转发给访客。运行在 Cloudflare Workers + D1 上，免费套餐即可承载。
+
+适合用来镜像常用安装包、为不可直连的公开文件提供统一下载入口、并记录下载日志。它**不是**通用代理——访客只能下载你审核过的路由，无法用它访问任意 URL。
+
+## 工作原理
+
+```text
+后台配置（管理员）：
+  Source  上游站点，如 https://ftp.mozilla.org
+  Route   路径映射，如 /firefox → /pub/fenix（勾选公开）
+
+访客下载（无需登录）：
+  https://你的域名/download/firefox/releases/.../fenix.apk
+      │  流式中继：不落盘、不按文件大小占内存，支持 Range 断点续传
+      ▼
+  https://ftp.mozilla.org/pub/fenix/releases/.../fenix.apk
+```
+
+每次请求都会重新解析上游 IP 并拒绝内网地址，防止服务被用来攻击内网（SSRF）。
+
+## 准备工作
+
+| 条件                                       | 本地体验 | 部署上线 |
+| ------------------------------------------ | :------: | :------: |
+| Node.js 20+（`node -v` 检查，推荐 22 LTS） |    ✓     |    ✓     |
+| Cloudflare 账号（免费）                    |    —     |    ✓     |
+| 域名已接入 Cloudflare（NS 托管）           |    —     |    ✓     |
+
+域名接入方法：在 Cloudflare Dashboard「添加站点」，按提示把域名的 NS 记录改成 Cloudflare 分配的两个地址，等待生效即可。
+
+## 第一步：本地跑起来（约 5 分钟）
+
+```bash
+git clone <仓库地址> && cd fetch-bridge
+cp .env.example .env
+```
+
+编辑 `.env`，填这三项（其余保持默认）：
+
+```dotenv
+AUTH_SECRET="终端运行 openssl rand -base64 32 生成"
+ADMIN_EMAIL="管理员邮箱"
+ADMIN_PASSWORD="本地登录密码"
+```
+
+然后一键启动（自动安装依赖、初始化数据库、写入一条 Mozilla 示例路由）：
+
+```bash
+./start-dev.sh
+```
+
+打开 <http://localhost:3000>，用上面的邮箱密码登录后台。接着验证示例路由是否通：
+
+```bash
+curl -s "http://localhost:3000/download/firefox/releases/" | head -5
+```
+
+返回 Mozilla 目录列表的 HTML 即本地环境正常（该路由会把请求中继到 `https://ftp.mozilla.org/pub/fenix/releases/`）。
+
+Windows 或不使用脚本时的手动步骤：
+
+```bash
+cp wrangler.example.jsonc wrangler.jsonc
+cp wrangler.download.example.jsonc wrangler.download.jsonc
+npm install
+npm run task -- d1:local   # 初始化本地数据库
+npm run task -- db:seed    # 写入示例路由
+npm run dev
+```
+
+## 第二步：部署到 Cloudflare（约 10 分钟）
+
+确认「准备工作」中的域名已接入后，运行交互式引导：
+
+```bash
+npm run setup
+```
+
+它会依次引导你：浏览器授权登录 Cloudflare → 输入站点域名（如 `dl.example.com`）→ 自动创建 D1 数据库并生成两份 `wrangler*.jsonc` → 首次部署主应用 → 设置管理员邮箱与密码（`AUTH_SECRET` 自动生成并写入 Secret）→ 部署下载 Worker。
+
+完成后访问 `https://你的域名/console`，能正常登录即部署成功。以后每次改完代码，一条命令发布：
+
+```bash
+npm run deploy
+```
+
+## 第三步：添加你的第一个下载
+
+远程数据库是空的（示例路由只写入本地），登录后台添加第一条：
+
+1. 打开 `/console/sources`，新建 Source：名称随意，**Base URL 必须是无凭据的公开 HTTPS**（如 `https://ftp.mozilla.org`）。
+2. 在该 Source 下新建 Route：路径前缀如 `/firefox`，目标目录如 `/pub/fenix`，保持启用并勾选**公开**（不勾选则该路由不对外提供下载）。
+3. 下载地址 = `https://你的域名/download/<路径前缀>/<上游文件相对路径>`，页面下方的解析面板可实时查看 URL 命中了哪条 Route。
+
+用 curl 验证：
+
+```bash
+curl -s -D - -o /dev/null "https://你的域名/download/firefox/releases/"
+```
+
+响应头包含 `x-fetch-bridge-relay: lightweight` 即下载链路正常。Range 断点续传与哈希校验方法见 [docs/README.md](docs/README.md#部署后验证)。
+
+## 后台功能地图
+
+| 页面                | 作用                                     |
+| ------------------- | ---------------------------------------- |
+| `/console`          | 今日请求数、中继流量、失败率、最近请求   |
+| `/console/sources`  | 管理 Source 与 Route，可视化路由匹配过程 |
+| `/console/logs`     | 全部下载日志（状态、耗时、字节数、IP）   |
+| `/console/settings` | 绑定 Passkey，之后可免密码登录           |
+
+## 常见问题
+
+- **安装或启动报错**：确认 `node -v` ≥ 20。
+- **setup 部署报域名 / Route 相关错误**：域名还没接入 Cloudflare 或不属于当前账号，见「准备工作」。
+- **登录时报错或一直跳回登录页**：`AUTH_SECRET` / `ADMIN_EMAIL` / `ADMIN_PASSWORD` 未配齐。本地检查 `.env`；生产运行 `npx wrangler secret list` 确认三个 Secret 都存在。
+- **下载返回 404**：Source 或 Route 未启用，或 Route 未勾选公开。
+- **下载返回 400**：上游地址不满足安全要求（必须公开 HTTPS，且不能解析到内网 IP）。
+
+更多排查（1102、状态码含义、Range 校验）见 [docs/README.md](docs/README.md)。
+
+## 常用命令
+
+```bash
+npm run dev              # Next.js 本地开发
+npm test                 # 下载中继核心测试（lib/*.test.ts）
+npm run lint             # ESLint
+npm run deploy           # 应用远程迁移并部署主应用 + 下载 Worker
+npm run deploy -- app    # 只部署主应用 Worker（download 同理）
+npm run task             # 列出全部低频任务（db:seed、d1:remote、cf:check、cf:typegen 等）
+```
+
+本地开发与生产均使用 SQLite：本地为文件数据库（`prisma/dev.db`），生产为 Cloudflare D1。`npm run dev` 使用 Next.js 内置的备用下载实现（`lib/download.ts`），便于同时开发后台与下载功能。
 
 ## 设计要点
 
@@ -32,51 +164,16 @@ fetch-bridge.example.com
 - 首次使用密码登录后，可在 `/console/settings` 为当前设备绑定 Passkey；此后可用系统生物识别或设备解锁直接登录。
 - Passkey 仅绑定到这个已验证的管理员账号，站点不提供公开注册。
 
-## 快速开始
-
-```bash
-cp .env.example .env
-cp wrangler.example.jsonc wrangler.jsonc
-cp wrangler.download.example.jsonc wrangler.download.jsonc
-npm install
-npm run db:d1:migrate:local
-npm run db:seed
-npm run dev
-```
-
-也可以一键启动本地开发环境：
-
-```bash
-./start-dev.sh
-```
-
-脚本会在首次运行时复制 `.env.example`、安装依赖、应用迁移并写入示例 Route。请在 `.env` 中填写 `AUTH_SECRET`、`ADMIN_EMAIL` 与 `ADMIN_PASSWORD` 后再登录后台。
-
-本地开发与生产均使用 SQLite：本地为文件数据库（`prisma/dev.db`），生产为 Cloudflare D1。`npm run dev` 使用 Next.js 内置的备用下载实现（`lib/download.ts`），便于同时开发后台与下载功能。
-
 ## 数据模型
 
-| 模型            | 作用                                                       |
-| --------------- | ---------------------------------------------------------- |
-| `User` / `Account` / `Session` / `Authenticator` | NextAuth 管理员账号与已绑定 Passkey，账号仅在密码登录成功后创建 |
-| `Source`        | 上游源站：`baseUrl`、超时、自定义 UA 与转发头、启用开关     |
-| `Route`         | 路径前缀到 Source 目标目录的映射，带 `isPublic` 开关        |
-| `DownloadLog`   | 每次中继请求的状态、耗时、字节数与客户端 IP，经 `waitUntil` 异步写入 |
+| 模型                                             | 作用                                                                 |
+| ------------------------------------------------ | -------------------------------------------------------------------- |
+| `User` / `Account` / `Session` / `Authenticator` | NextAuth 管理员账号与已绑定 Passkey，账号仅在密码登录成功后创建      |
+| `Source`                                         | 上游源站：`baseUrl`、超时、自定义 UA 与转发头、启用开关              |
+| `Route`                                          | 路径前缀到 Source 目标目录的映射，带 `isPublic` 开关                 |
+| `DownloadLog`                                    | 每次中继请求的状态、耗时、字节数与客户端 IP，经 `waitUntil` 异步写入 |
 
 Schema 与迁移分别位于 `prisma/sqlite/schema.prisma` 与 `prisma/sqlite/migrations`。数据模型详见 [prisma/README.md](prisma/README.md)，部署运维详见 [docs/README.md](docs/README.md)。
-
-## 常用命令
-
-```bash
-npm run dev                         # Next.js 本地开发
-npm run test:relay                  # 下载中继核心测试（lib/*.test.ts）
-npm run lint                        # ESLint
-npm run check:cloudflare:download   # 类型、测试与轻量 Worker dry-run
-npm run deploy:cloudflare           # 应用远程迁移并部署主应用 + 下载 Worker
-npm run deploy:cloudflare:app       # 只部署主应用 Worker
-npm run deploy:cloudflare:download  # 只部署下载 Worker
-npm run db:d1:migrate:remote        # 应用远程 D1 迁移
-```
 
 ## Workers 免费套餐注意
 
