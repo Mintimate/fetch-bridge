@@ -10,13 +10,13 @@ cp .env.example .env
 ```
 
 首次运行前请在 `.env` 中设置 `AUTH_SECRET`、`ADMIN_EMAIL` 和
-`ADMIN_PASSWORD`。创建本地 schema 迁移时运行 `npm run db:migrate`，本地数据库文件不会提交到 Git。
+`ADMIN_PASSWORD`。创建本地 schema 迁移时运行 `npm run task -- db:migrate`，本地数据库文件不会提交到 Git。
 
 `npm run dev` 使用 Next.js 内置的备用下载实现，便于同时开发后台和下载功能。轻量 Worker 可单独在本地运行：
 
 ```bash
-npm run db:d1:migrate:local
-npm run preview:cloudflare:download
+npm run task -- d1:local
+npm run task -- cf:preview:download
 ```
 
 ## Cloudflare Workers + D1
@@ -31,6 +31,33 @@ npm run preview:cloudflare:download
 Cloudflare 会优先匹配更具体的 `/download/*` Route。两个 Worker 共享同一个 D1，因此 Source、Route、Passkey 与日志不需要复制；登录 Secret 只属于主 Worker，不应配置到下载 Worker。
 
 ### 首次配置
+
+推荐用交互式脚本一次完成全部初始化：
+
+```bash
+npm run setup
+```
+
+脚本依次完成：检查 `wrangler` 登录、询问站点域名与 Zone、查找或创建
+D1 数据库、生成 `wrangler.jsonc` 与 `wrangler.download.jsonc`、写入
+`.env.local` 的 `NEXT_PUBLIC_SITE_URL`、首次部署主应用、设置
+`AUTH_SECRET`（自动生成）/ `ADMIN_EMAIL` / `ADMIN_PASSWORD` 三个 Secret，
+最后部署下载 Worker。
+
+之后的日常发布只需：
+
+```bash
+npm run deploy
+```
+
+部署脚本会先执行远程 D1 迁移，再依次发布主应用和下载 Worker。单独运行
+`npm run deploy -- app` 或 `npm run deploy -- download` 时也会先应用迁移，
+避免新版代码引用尚未创建的日志字段。发布前可用
+`npm run task -- cf:check` 做类型、测试与轻量 Worker dry-run 检查。
+
+#### 手动配置
+
+脚本不适用时（如 CI 环境），可按以下步骤手动完成：
 
 1. 复制不会提交到 Git 的环境配置：
 
@@ -55,7 +82,7 @@ Cloudflare 会优先匹配更具体的 `/download/*` Route。两个 Worker 共�
    - `wrangler.download.jsonc`
 
    两处必须指向同一个数据库。如修改 `database_name`，也要同步修改
-   `db:d1:migrate:*` npm scripts。
+   `scripts/task.mjs` 中的 `d1:local` / `d1:remote` 任务。
 
    同时将生产域名写入两份配置，并在构建前通过 `.env.local` 设置：
 
@@ -66,10 +93,11 @@ Cloudflare 会优先匹配更具体的 `/download/*` Route。两个 Worker 共�
 4. 应用远程迁移：
 
    ```bash
-   npm run db:d1:migrate:remote
+   npm run task -- d1:remote
    ```
 
-5. 给主 Worker 配置认证变量：
+5. 给主 Worker 配置认证 Secret（Worker 需至少部署过一次才能写入 Secret，
+   因此先执行一次 `npm run deploy -- app`）：
 
    ```bash
    npx wrangler secret put AUTH_SECRET
@@ -77,26 +105,14 @@ Cloudflare 会优先匹配更具体的 `/download/*` Route。两个 Worker 共�
    npx wrangler secret put ADMIN_PASSWORD
    ```
 
-   再在 Cloudflare Dashboard 的 **Workers & Pages → fetch-bridge → Settings →
-   Variables and Secrets** 添加普通变量 `AUTH_TRUST_HOST=true`。部署主 Worker
-   时使用 `--keep-vars`，不会清除 Dashboard 中已有变量。
+   `AUTH_TRUST_HOST=true` 已通过 `wrangler.jsonc` 的 `vars` 随部署生效，
+   无需在 Dashboard 手动添加。若另有 Dashboard 侧变量，部署主 Worker 时
+   使用 `--keep-vars`，不会清除已有变量。
 
-6. 检查并部署：
-
-   ```bash
-   npm run check:cloudflare:download
-   npm run deploy:cloudflare
-   ```
-
-   部署脚本会先执行远程 D1 迁移，再依次发布主应用和下载 Worker。
-   单独运行 `deploy:cloudflare:app` 或 `deploy:cloudflare:download` 时也会
-   先应用迁移，避免新版代码引用尚未创建的日志字段。
-
-   也可只部署其中一部分：
+6. 部署下载 Worker：
 
    ```bash
-   npm run deploy:cloudflare:app
-   npm run deploy:cloudflare:download
+   npm run deploy -- download
    ```
 
 ### 自定义域名
@@ -111,6 +127,32 @@ Cloudflare 会优先匹配更具体的 `/download/*` Route。两个 Worker 共�
 
 下载 Worker 的 `workers_dev` 为 `false`，因此它不会单独提供
 `fetch-bridge-download.*.workers.dev` 地址；请通过自定义域名测试。
+
+## 首次使用指南
+
+部署成功后远程 D1 是空库，登录 `https://你的域名/console` 添加数据：
+
+### 添加 Source（上游站点）
+
+| 字段         | 说明                                                                                                             |
+| ------------ | ---------------------------------------------------------------------------------------------------------------- |
+| 名称         | 仅用于后台展示                                                                                                   |
+| Base URL     | 必须是无凭据的公开 HTTPS，如 `https://ftp.mozilla.org`；每次请求会重新解析其 A/AAAA 记录，解析到内网地址会被拒绝 |
+| 超时         | 上游响应超时（1–120 秒）                                                                                         |
+| 自定义请求头 | 可选，如 UA；Cookie、Authorization 等敏感头不会被转发                                                            |
+
+### 添加 Route（路径映射）
+
+| 字段     | 说明                                                     |
+| -------- | -------------------------------------------------------- |
+| 路径前缀 | 下载 URL 的第一段，如 `/firefox`                         |
+| 目标目录 | 拼在 Source Base URL 后的目录，如 `/pub/fenix`           |
+| 公开     | 勾选后才能通过 `/download/*` 访问；私有 Route 仅后台可见 |
+| 启用     | 关闭后该路由立即返回 404                                 |
+
+最终下载地址为 `https://你的域名/download/<路径前缀>/<文件相对路径>`，
+上游实际请求 = `Base URL` + `目标目录` + `<文件相对路径>`。
+Sources 页面下方的可视化面板可输入下载地址，实时查看它命中了哪条 Route。
 
 ## 部署后验证
 
@@ -157,6 +199,14 @@ curl -sS -I -H "Range: bytes=0-1048575" \
 `aec470846bae83ca8900a2fe88cd61599ac25a4e`，响应应包含
 `content-range: bytes 0-1048575/400952232` 和
 `x-fetch-bridge-transport: identity-socket`。
+
+## 首次部署常见问题
+
+- **`wrangler login` 无法打开浏览器**：服务器等无图形界面环境可改用 API Token：`export CLOUDFLARE_API_TOKEN=...`（需 Workers 与 D1 编辑权限）。
+- **deploy 报 Custom Domain / DNS 相关错误**：域名未接入当前 Cloudflare 账号。先在 Dashboard 添加站点并修改 NS，生效后重跑 `npm run deploy -- app`。
+- **`wrangler secret put` 报 Worker not found**：该 Worker 还没部署过。先 `npm run deploy -- app` 再设置 Secret（`npm run setup` 已按此顺序执行）。
+- **登录接口 500 或登录后跳回登录页**：三个 Secret 未配齐。`npx wrangler secret list` 应包含 `AUTH_SECRET`、`ADMIN_EMAIL`、`ADMIN_PASSWORD`。
+- **打开后台提示数据库表不存在**：远程迁移未应用，运行 `npm run task -- d1:remote`。
 
 ## 1102 与常见故障
 
