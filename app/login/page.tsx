@@ -10,7 +10,7 @@ import {
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useState } from "react";
-import { PasskeyButton } from "@/components/passkey-button";
+import { PasskeyButton } from "@/components/auth/passkey-button";
 import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {

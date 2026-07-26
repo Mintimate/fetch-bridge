@@ -1,7 +1,7 @@
 "use client";
 
 import { Fingerprint, PencilLine, Plus, Trash2 } from "lucide-react";
-import { PasskeyButton } from "@/components/passkey-button";
+import { PasskeyButton } from "@/components/auth/passkey-button";
 import { Button } from "@/components/ui/button";
 import { formatShanghaiDate } from "@/lib/utils";
 

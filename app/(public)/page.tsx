@@ -4,7 +4,7 @@ import { signOut } from "@/auth";
 import { getDb } from "@/lib/db";
 import { formatShanghaiDate } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { BridgeUrlForm } from "@/components/bridge-url-form";
+import { BridgeUrlForm } from "@/components/home/bridge-url-form";
 
 export const dynamic = "force-dynamic";
 

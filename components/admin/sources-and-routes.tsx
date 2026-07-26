@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SourceForm } from "@/components/admin/forms";
 import { SourceManagement } from "@/components/admin/source-management";
-import { SourceRoutesPanel } from "@/components/source-routes-panel";
+import { SourceRoutesPanel } from "@/components/admin/source-routes-panel";
 
 type Source = {
   id: string;

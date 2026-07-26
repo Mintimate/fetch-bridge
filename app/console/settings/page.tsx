@@ -1,8 +1,8 @@
 import { Download, KeyRound, Upload } from "lucide-react";
 import { auth } from "@/auth";
 import { Button } from "@/components/ui/button";
-import { ConfigImport } from "@/components/config-import";
-import { PasskeyManagement } from "@/components/passkey-management";
+import { ConfigImport } from "@/components/admin/config-import";
+import { PasskeyManagement } from "@/components/admin/passkey-management";
 import { getDb } from "@/lib/db";
 import { removePasskey, updatePasskeyName } from "./actions";
 

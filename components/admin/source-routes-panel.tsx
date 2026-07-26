@@ -1,6 +1,6 @@
 "use client";
 
-import { UrlRouteQuickAdd } from "@/components/url-route-quick-add";
+import { UrlRouteQuickAdd } from "@/components/admin/url-route-quick-add";
 import { RouteManagement } from "@/components/admin/route-management";
 
 type Route = {

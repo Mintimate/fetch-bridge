@@ -1,7 +1,7 @@
 import { getDb } from "@/lib/db";
 export const dynamic = "force-dynamic";
 import { formatShanghaiDateTime } from "@/lib/utils";
-import { LogRefreshControls } from "@/components/log-refresh-controls";
+import { LogRefreshControls } from "@/components/admin/log-refresh-controls";
 
 function legacyUpstreamUrl(log: {
   path: string;

@@ -132,6 +132,18 @@ npm run deploy -- app    # 只部署主应用 Worker（download 同理）
 npm run task             # 列出全部低频任务（db:seed、d1:remote、cf:check、cf:typegen 等）
 ```
 
+## 项目结构
+
+```text
+app/          Next.js 页面、路由与 Server Actions
+components/   按 admin、auth、home、ui 功能域归档的界面组件
+lib/          下载中继、安全校验、数据库与通用服务端逻辑
+workers/      独立的轻量下载 Worker
+prisma/       SQLite / D1 schema、迁移与种子数据
+scripts/      本地初始化、Cloudflare 配置与部署脚本
+docs/         部署、运维与排障文档
+```
+
 本地开发与生产均使用 SQLite：本地为文件数据库（`prisma/dev.db`），生产为 Cloudflare D1。`npm run dev` 使用 Next.js 内置的备用下载实现（`lib/download.ts`），便于同时开发后台与下载功能。
 
 ## 设计要点

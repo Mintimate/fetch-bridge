@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { startOfShanghaiDay } from "@/lib/utils";
-import { LogRefreshControls } from "@/components/log-refresh-controls";
+import { LogRefreshControls } from "@/components/admin/log-refresh-controls";
 
 export const dynamic = "force-dynamic";
 function Metric({
